@@ -1,0 +1,45 @@
+version: '3'
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia #or whatever driver is appropriate
+              count: all
+              capabilities: [gpu]
+      
+    container_name: ollama # --name ollama
+    runtime: nvidia # --gpus all
+    #cap_drop: #--cap-drop=ALL
+    #  - ALL #it can be set to all if you have no other capabilities added
+    cap_add: # --cap-add=SYS_NICE
+      - SYS_NICE
+    security_opt: # --security-opt=no-new-privileges
+      - no-new-privileges
+    mem_limit: 8g # --memory=8g
+    memswap_limit: 8g # --memory-swap=8g
+    cpus: '4' # --cpus=4
+    read_only: true # --read-only
+    restart: always #make sure the service comes back if it crashes
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - 3000:8080
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - open-webui_data:/app/backend/data
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
+  open-webui_data:
+
